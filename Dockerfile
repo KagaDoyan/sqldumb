@@ -1,7 +1,7 @@
 FROM golang:1.21-alpine
 
-# Install MySQL client
-RUN apk add --no-cache mysql-client
+# Install MariaDB client and required dependencies
+RUN apk add --no-cache mariadb-client mariadb-connector-c
 
 WORKDIR /app
 
@@ -18,4 +18,4 @@ COPY . .
 RUN go build -o main .
 
 # Command to run the application
-CMD ["./main"] 
+CMD ["./main"]
