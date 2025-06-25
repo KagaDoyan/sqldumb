@@ -1,9 +1,9 @@
 database:
-  host: "10.150.1.90"
-  port: 3306
-  user: "db"
-  password: "lcc@#2024!@"
-  name: "test-demo"
+  host: 
+  port: 
+  user: 
+  password: 
+  name: 
 
 server:
-  port: 3000
+  port:
