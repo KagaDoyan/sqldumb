@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  backup:
+    build: .
+    ports:
+      - "3000:3000"  # Assuming your service runs on port 3000
+    volumes:
+      - ./backups:/app/backups
+      - ./config.yaml:/app/config.yaml
+      - ./backup-config.json:/app/backup-config.json
+    environment:
+      - TZ=Asia/Bangkok  # Set timezone for consistent timestamps
+
+volumes:
+  mysql_data: 

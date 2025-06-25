@@ -1,0 +1,25 @@
+{
+    "schedules": "daily",
+    "schedule_option": [
+        {
+            "name": "daily",
+            "cron": "0 0 * * *"
+        },
+        {
+            "name": "weekly",
+            "cron": "0 0 * * 0"
+        },
+        {
+            "name": "monthly",
+            "cron": "0 0 1 * *"
+        },
+        {
+            "name": "custom",
+            "cron": "0 0 * * *"
+        }
+    ],
+    "schedule_enabled": true,
+    "backup_path": "./backups",
+    "last_backup": "2025-06-23T15:53:27.505143219+07:00",
+    "next_backup": null
+}

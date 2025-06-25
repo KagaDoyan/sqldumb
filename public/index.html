@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Database Status Dashboard</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            color: #2c3e50;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .card {
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            position: relative;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-connected { background-color: #28a745; }
+        .status-disconnected { background-color: #dc3545; }
+        .status-text {
+            font-size: 18px;
+            color: #495057;
+        }
+        .details {
+            margin-top: 10px;
+            color: #6c757d;
+        }
+        .button {
+            padding: 8px 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: background-color 0.2s;
+        }
+        .button:hover { background-color: #0056b3; }
+        .button:active { background-color: #004085; }
+        .button.loading {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        .refresh-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+        .button svg {
+            width: 16px;
+            height: 16px;
+        }
+        .loading svg {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .schedule-settings {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .schedule-select {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .schedule-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .schedule-toggle input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+        }
+        .schedule-info {
+            margin-top: 15px;
+            padding: 10px;
+            background: #e9ecef;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #495057;
+        }
+        .cron-expression {
+            font-family: monospace;
+            background: #fff;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid #ced4da;
+        }
+        .backup-status {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #495057;
+        }
+        .backup-button {
+            margin-top: 20px;
+            width: 100%;
+            padding: 12px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: background-color 0.2s;
+        }
+        .backup-button:hover {
+            background-color: #218838;
+        }
+        .backup-button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        .backup-button svg {
+            width: 20px;
+            height: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>System Status</h1>
+        <div class="card">
+            <div id="dbStatus">
+                <span class="status-indicator status-disconnected"></span>
+                <span class="status-text">Checking database connection...</span>
+                <div class="details" id="dbDetails"></div>
+            </div>
+            <button class="button refresh-button" onclick="manualRefresh()" id="refreshButton">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Refresh
+            </button>
+        </div>
+
+        <h2>Backup Schedule</h2>
+        <div class="card">
+            <div class="schedule-settings">
+                <select id="scheduleSelect" class="schedule-select" onchange="updateSchedule()">
+                    <option value="daily">Daily Backup</option>
+                    <option value="weekly">Weekly Backup</option>
+                    <option value="monthly">Monthly Backup</option>
+                    <option value="custom">Custom Schedule</option>
+                </select>
+                <div class="schedule-toggle">
+                    <input type="checkbox" id="scheduleEnabled" onchange="updateSchedule()">
+                    <label for="scheduleEnabled">Enable Schedule</label>
+                </div>
+            </div>
+            <div id="scheduleInfo" class="schedule-info">
+                <!-- Schedule information will be displayed here -->
+            </div>
+            <div id="backupStatus" class="backup-status">
+                <!-- Backup status will be displayed here -->
+            </div>
+            <button id="manualBackupBtn" class="backup-button" onclick="startManualBackup()">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+                Start Manual Backup
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let isRefreshing = false;
+        let scheduleOptions = [];
+
+        function updateDBStatus() {
+            const button = document.getElementById('refreshButton');
+            if (isRefreshing) {
+                button.classList.add('loading');
+                button.disabled = true;
+            }
+
+            fetch('/api/db-status')
+                .then(response => response.json())
+                .then(data => {
+                    const statusIndicator = document.querySelector('.status-indicator');
+                    const statusText = document.querySelector('.status-text');
+                    const dbDetails = document.getElementById('dbDetails');
+                    
+                    if (data.connected) {
+                        statusIndicator.className = 'status-indicator status-connected';
+                        statusText.textContent = 'Database Connected';
+                        dbDetails.textContent = `Connection established at ${data.time}`;
+                    } else {
+                        statusIndicator.className = 'status-indicator status-disconnected';
+                        statusText.textContent = 'Database Disconnected';
+                        dbDetails.textContent = data.error || 'Unable to connect to database';
+                    }
+                })
+                .catch(error => {
+                    const statusIndicator = document.querySelector('.status-indicator');
+                    const statusText = document.querySelector('.status-text');
+                    const dbDetails = document.getElementById('dbDetails');
+                    
+                    statusIndicator.className = 'status-indicator status-disconnected';
+                    statusText.textContent = 'Error Checking Database';
+                    dbDetails.textContent = 'Failed to fetch database status';
+                })
+                .finally(() => {
+                    isRefreshing = false;
+                    button.classList.remove('loading');
+                    button.disabled = false;
+                });
+        }
+
+        function manualRefresh() {
+            if (!isRefreshing) {
+                isRefreshing = true;
+                updateDBStatus();
+            }
+        }
+
+        function loadBackupConfig() {
+            fetch('/api/backup/config')
+                .then(response => response.json())
+                .then(data => {
+                    scheduleOptions = data.schedule_option;
+                    document.getElementById('scheduleSelect').value = data.schedules;
+                    document.getElementById('scheduleEnabled').checked = data.schedule_enabled;
+                    updateScheduleInfo(data.schedules);
+                    updateBackupStatus(data);
+                })
+                .catch(error => {
+                    console.error('Error loading backup configuration:', error);
+                });
+        }
+
+        function updateScheduleInfo(scheduleName) {
+            const scheduleInfo = document.getElementById('scheduleInfo');
+            const option = scheduleOptions.find(opt => opt.name === scheduleName);
+            
+            if (option) {
+                let description = '';
+                switch(option.name) {
+                    case 'daily':
+                        description = 'Backup will run every day at midnight';
+                        break;
+                    case 'weekly':
+                        description = 'Backup will run every Sunday at midnight';
+                        break;
+                    case 'monthly':
+                        description = 'Backup will run on the 1st day of every month at midnight';
+                        break;
+                    case 'custom':
+                        description = 'Custom schedule';
+                        break;
+                }
+                
+                scheduleInfo.innerHTML = `
+                    <strong>${description}</strong><br>
+                    Cron Expression: <span class="cron-expression">${option.cron}</span>
+                `;
+            }
+        }
+
+        function updateBackupStatus(data) {
+            const statusDiv = document.getElementById('backupStatus');
+            const lastBackup = data.last_backup ? new Date(data.last_backup).toLocaleString() : 'Never';
+            const nextBackup = data.next_backup ? new Date(data.next_backup).toLocaleString() : 'Not scheduled';
+            
+            statusDiv.innerHTML = `
+                <div>Last backup: ${lastBackup}</div>
+                <div>Next scheduled backup: ${nextBackup}</div>
+            `;
+        }
+
+        function startManualBackup() {
+            const button = document.getElementById('manualBackupBtn');
+            button.disabled = true;
+            button.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="animate-spin">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Backing up...
+            `;
+
+            fetch('/api/backup/manual', {
+                method: 'POST'
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+                    alert('Backup completed successfully!');
+                    loadBackupConfig(); // Refresh status
+                })
+                .catch(error => {
+                    console.error('Backup failed:', error);
+                    alert('Backup failed: ' + error.message);
+                })
+                .finally(() => {
+                    button.disabled = false;
+                    button.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                        </svg>
+                        Start Manual Backup
+                    `;
+                });
+        }
+
+        function updateSchedule() {
+            const schedule = document.getElementById('scheduleSelect').value;
+            const enabled = document.getElementById('scheduleEnabled').checked;
+
+            fetch('/api/backup/config', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    schedule: schedule,
+                    enabled: enabled
+                })
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to update schedule');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    updateScheduleInfo(data.schedules);
+                    updateBackupStatus(data);
+                })
+                .catch(error => {
+                    console.error('Error updating schedule:', error);
+                    alert('Failed to update schedule configuration');
+                });
+        }
+
+        // Initial load
+        updateDBStatus();
+        loadBackupConfig();
+        setInterval(updateDBStatus, 5000);
+    </script>
+</body>
+</html> 
