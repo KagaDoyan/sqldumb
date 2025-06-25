@@ -11,6 +11,8 @@ services:
       - ./backup-config.json:/app/backup-config.json
     environment:
       - TZ=Asia/Bangkok  # Set timezone for consistent timestamps
+    restart: unless-stopped
 
 volumes:
-  mysql_data: 
+  backups:
+    driver: local
