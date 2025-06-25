@@ -4,7 +4,7 @@ services:
   backup:
     build: .
     ports:
-      - "3000:3000"  # Assuming your service runs on port 3000
+      - "8001:8001"  # Assuming your service runs on port 3000
     volumes:
       - ./backups:/app/backups
       - ./config.yaml:/app/config.yaml
