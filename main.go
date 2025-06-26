@@ -5,6 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -276,9 +279,31 @@ func main() {
 		}
 
 		return c.JSON(fiber.Map{
-			"message": "Backup created successfully",
-			"path":    backupPath,
+			"message":  "Backup created successfully",
+			"path":     backupPath,
+			"filename": filepath.Base(backupPath),
 		})
+	})
+
+	// Download backup endpoint
+	api.Get("/backup/download/:filename", func(c *fiber.Ctx) error {
+		filename := c.Params("filename")
+		if filename == "" {
+			return c.Status(400).JSON(fiber.Map{
+				"error": "Filename is required",
+			})
+		}
+
+		pwd, _ := os.Getwd()
+		filePath := filepath.Join(pwd+"/backups", filename)
+
+		// Verify the file exists and is within the backup directory
+		if !strings.HasPrefix(filePath, pwd+"/backups") {
+			return c.Status(403).JSON(fiber.Map{
+				"error": "Invalid file path",
+			})
+		}
+		return c.Download(filePath)
 	})
 
 	// Start server with configured port

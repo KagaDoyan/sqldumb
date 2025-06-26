@@ -20,6 +20,6 @@
     ],
     "schedule_enabled": true,
     "backup_path": "./backups",
-    "last_backup": "2025-06-23T15:53:27.505143219+07:00",
+    "last_backup": "2025-06-26T09:05:33.142899754+07:00",
     "next_backup": null
 }

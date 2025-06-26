@@ -150,6 +150,22 @@
             width: 20px;
             height: 20px;
         }
+        .download-button {
+            background-color: #28a745;
+            margin-left: 10px;
+        }
+        .download-button:hover {
+            background-color: #218838;
+        }
+        .download-button svg {
+            width: 20px;
+            height: 20px;
+        }
+        .button-container {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
     </style>
 </head>
 <body>
@@ -189,18 +205,27 @@
             <div id="backupStatus" class="backup-status">
                 <!-- Backup status will be displayed here -->
             </div>
-            <button id="manualBackupBtn" class="backup-button" onclick="startManualBackup()">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                </svg>
-                Start Manual Backup
-            </button>
+            <div class="button-container">
+                <button id="manualBackupBtn" class="button" onclick="startManualBackup()">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                    Start Manual Backup
+                </button>
+                <button id="downloadBtn" class="button download-button" style="display: none;" onclick="downloadLatestBackup()">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Download Backup
+                </button>
+            </div>
         </div>
     </div>
 
     <script>
         let isRefreshing = false;
         let scheduleOptions = [];
+        let latestBackupFilename = null;
 
         function updateDBStatus() {
             const button = document.getElementById('refreshButton');
@@ -305,7 +330,9 @@
 
         function startManualBackup() {
             const button = document.getElementById('manualBackupBtn');
+            const downloadBtn = document.getElementById('downloadBtn');
             button.disabled = true;
+            downloadBtn.style.display = 'none';
             button.innerHTML = `
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="animate-spin">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -322,6 +349,8 @@
                         throw new Error(data.error);
                     }
                     alert('Backup completed successfully!');
+                    latestBackupFilename = data.filename;
+                    downloadBtn.style.display = 'inline-flex';
                     loadBackupConfig(); // Refresh status
                 })
                 .catch(error => {
@@ -337,6 +366,15 @@
                         Start Manual Backup
                     `;
                 });
+        }
+
+        function downloadLatestBackup() {
+            if (!latestBackupFilename) {
+                alert('No backup file available for download');
+                return;
+            }
+            
+            window.location.href = `/api/backup/download/${latestBackupFilename}`;
         }
 
         function updateSchedule() {
